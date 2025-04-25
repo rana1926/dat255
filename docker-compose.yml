@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./app
+    ports:
+      - "7860:5000"
+    volumes:
+      - ./app:/app
+      - ./models:/app/models  # Mount models from host to container
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
