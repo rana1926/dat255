@@ -135,6 +135,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+imageclassification/
 
 # Spyder project settings
 .spyderproject
@@ -177,4 +178,8 @@ cython_debug/
 /data/
 
 # os
-.DS_Store
+.DS_Storemodels/
+
+models/
+*.keras
+logs/
