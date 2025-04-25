@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Land Cover Classification</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body class="bg-slate-900 text-slate-50">
+    <div class="flex flex-col items-center justify-center gap-6 border-b-2 border-teal-700 p-4 ">
+      <h1 class="text-3xl">Land Cover Classifier</h1>
+      <p>Upload a satellite image to classify the land cover type</p>
+    </div>
+    <div class="flex items-start justify-center min-h-screen p-4 gap-8">
+      <div class="h-[40vh] flex items-center p-4">
+        <form id="upload-form" enctype="multipart/form-data" class="flex flex-col items-center gap-4">
+          <div class="cursor-pointer">
+            <label for="image-upload" class="bg-teal-700 px-4 py-2 rounded cursor-pointer">
+              Select Image
+            </label>
+            <input
+              type="file"
+              id="image-upload"
+              name="file"
+              accept="image/*"
+              class="hidden"
+            />
+          </div>
+          <button type="submit" class="bg-teal-700 px-4 py-2 rounded cursor-pointer">Classify Image</button>
+        </form>
+      </div>
+
+      <div class="min-h-[50vh] flex flex-col items-center justify-center gap-4">
+        <div id="preview-image" class="hidden">
+          <h3>Uploaded Image</h3>
+          <img src="#" alt="Preview" />
+        </div>
+        <div
+          class="hidden flex-col items-center justify-center gap-4"
+          id="results-container"
+        >
+          <div>
+            <h3>Prediction Results</h3>
+            <div>
+              <span id="main-class">Class</span>:
+              <span id="confidence">0%</span> confidence
+            </div>
+  
+            <h4>Top 3 Predictions</h4>
+            <ul id="predictions-list"></ul>
+          </div>
+        </div>
+  
+        <div class="hidden" id="loading">
+          <div class="w-12 h-12 border-4 border-teal-200 border-t-teal-700 rounded-full animate-spin mb-3 mx-auto"></div>
+          <p>Processing image...</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("upload-form");
+        const imageUpload = document.getElementById("image-upload");
+        const previewImage = document.getElementById("preview-image");
+        const resultsContainer = document.getElementById("results-container");
+        const mainClass = document.getElementById("main-class");
+        const confidence = document.getElementById("confidence");
+        const predictionsList = document.getElementById("predictions-list");
+        const loadingIndicator = document.getElementById("loading");
+
+        // Preview the selected image
+        imageUpload.addEventListener("change", function () {
+          const file = this.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              previewImage.getElementsByTagName('img')[0].src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            previewImage.classList.remove("hidden");
+          }
+        });
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+
+          loadingIndicator.classList.remove("hidden");
+          loadingIndicator.classList.add("flex");
+          resultsContainer.classList.remove("hideen");
+
+          fetch("/predict", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              loadingIndicator.style.display = "none";
+
+              if (data.error) {
+                alert(data.error);
+                return;
+              }
+
+              mainClass.textContent = data.prediction;
+              confidence.textContent = data.confidence.toFixed(2) + "%";
+
+              predictionsList.innerHTML = "";
+
+              data.top3.forEach((pred) => {
+                const li = document.createElement("li");
+                li.textContent = `${pred.class}: ${pred.confidence.toFixed(
+                  2
+                )}%`;
+                predictionsList.appendChild(li);
+              });
+
+              resultsContainer.style.display = "flex";
+            })
+            .catch((error) => {
+              loadingIndicator.style.display = "none";
+              alert("Error processing the image. Please try again.");
+              console.error("Error:", error);
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
